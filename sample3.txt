@@ -1,0 +1,20 @@
+/*
+ * Sample program 3
+ */
+class MathUtils {
+
+	number sum(number i) {
+		if (i <= 0) {
+			return 0;
+		}
+		return i + this.sum(i-1);
+	}
+}
+
+void main(){
+	MathUtils mu;
+	mu = new MathUtils();
+	number sums ;
+	sums = mu.sum(100);
+	write("1+2+...+100=" + sums);
+}

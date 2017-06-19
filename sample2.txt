@@ -1,0 +1,55 @@
+/*
+ * Sample program 2
+ */
+class Message {
+	string text;
+	Message next;
+
+	Message() {
+		this.text = null;
+		this.next = null;
+	}
+}
+
+class MessageStore {
+	Message first;
+
+	MessageStore() {
+		this.first = null;
+	}
+
+	void append(Message m) {
+		m.next = first;
+		first = m;
+		return 0;
+	}
+}
+void main() {
+	
+	MessageStore store;
+	store = new MessageStore();
+	Message m ;
+	m = new Message();
+	m.text = "Message 1\n";
+	store.append(m);
+	m = new Message();
+	m.text = "Message 2\n";
+	m = new Message();
+	m.text = "Message 3\n";
+	store.append(m);
+
+	Message it ;
+	it = store.first;
+	number i;
+	i = 0;
+
+	while (it != null) {
+		write ("Message " + i + " is : " + it.text);
+		i=i+1;
+		it = it.next;
+		while (it != null) {
+			break;
+		}
+		break;
+	}
+}
