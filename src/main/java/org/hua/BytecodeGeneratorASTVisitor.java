@@ -70,15 +70,6 @@ public class BytecodeGeneratorASTVisitor implements ASTVisitor {
     private boolean inClass = false;
 
     public BytecodeGeneratorASTVisitor() {
-        
-    }
-
-    public ClassNode getClassNode() {
-        return cn;
-    }
-
-    @Override
-    public void visit(CompilationUnit node) throws ASTVisitorException {
         // create class
         cn = new ClassNode();
         cn.access = Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER;
@@ -95,7 +86,14 @@ public class BytecodeGeneratorASTVisitor implements ASTVisitor {
         mn.maxLocals = 1;
         mn.maxStack = 1;
         cn.methods.add(mn);
-        
+    }
+
+    public ClassNode getClassNode() {
+        return cn;
+    }
+
+    @Override
+    public void visit(CompilationUnit node) throws ASTVisitorException {
         for ( Definition def : node.getDefinitions()) {
             def.accept(this);
         }
@@ -125,11 +123,21 @@ public class BytecodeGeneratorASTVisitor implements ASTVisitor {
 
     @Override
     public void visit(ClassDefinition node) throws ASTVisitorException {
-        innerClass = new ClassNode(); 
+        innerClass = new ClassNode();
         innerClass.access = Opcodes.ACC_PUBLIC;
+        innerClass.version = Opcodes.V1_5;
         innerClass.name = node.getId();
-        cn.sourceFile = "Calculator"+"$"+node.getId();
-        innerClass.superName = "Calculator";
+        innerClass.sourceFile = node.getId()+".in";
+        innerClass.superName = "java/lang/Object";
+
+        // create constructor
+        mn = new MethodNode(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+        mn.instructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
+        mn.instructions.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V"));
+        mn.instructions.add(new InsnNode(Opcodes.RETURN));
+        mn.maxLocals = 1;
+        mn.maxStack = 1;
+        innerClass.methods.add(mn);
         
         for (FieldOrFunctionDefinition ffd : node.getDefinitions()) {
             ffd.accept(this);
@@ -199,6 +207,7 @@ public class BytecodeGeneratorASTVisitor implements ASTVisitor {
         SymTable<SymTableEntry> symTable = ASTUtils.getSafeEnv(node);
         SymTableEntry symTableEntry = symTable.lookup(id);
         Type type = symTableEntry.getType();
+        
         int opcode = type.getOpcode(Opcodes.ILOAD);
         int index = symTableEntry.getIndex();
         mn.instructions.add(new VarInsnNode(opcode, index));
@@ -214,13 +223,18 @@ public class BytecodeGeneratorASTVisitor implements ASTVisitor {
     
     @Override
     public void visit(AssignmentStatement node) throws ASTVisitorException {
-        node.getExpression1().accept(this);
-        Type typeExpr1 = ASTUtils.getSafeType(node.getExpression1());
-        mn.instructions.add(new InsnNode(typeExpr1.getOpcode(Opcodes.ISTORE)));
-        
+        LocalIndexPool pool = ASTUtils.getSafeLocalIndexPool(node);
         node.getExpression2().accept(this);
         Type typeExpr2 = ASTUtils.getSafeType(node.getExpression2());
-        mn.instructions.add(new InsnNode(typeExpr2.getOpcode(Opcodes.ISTORE)));
+        int indexExpr2 = pool.getLocalIndex(typeExpr2);
+        int opcode2 = typeExpr2.getOpcode(Opcodes.ILOAD);
+        mn.instructions.add(new VarInsnNode(opcode2, indexExpr2));
+        
+        node.getExpression1().accept(this);
+        Type typeExpr1 = ASTUtils.getSafeType(node.getExpression1());
+        int indexExpr1 = pool.getLocalIndex(typeExpr1);
+        int opcode1 = typeExpr1.getOpcode(Opcodes.ISTORE);
+        mn.instructions.add(new VarInsnNode(opcode1, indexExpr1));
     }
 
     @Override
@@ -437,6 +451,7 @@ public class BytecodeGeneratorASTVisitor implements ASTVisitor {
         String id = node.getId();
         SymTableEntry symTableEntry = env.lookup(id);
         Type functionType = symTableEntry.getType();
+        Type funInClass = symTableEntry.getFunInClass();
         
         String type = "(";
         for (Expression ex : node.getExpressions()) {
@@ -445,7 +460,7 @@ public class BytecodeGeneratorASTVisitor implements ASTVisitor {
         }
         type += ")"+functionType;
         
-        mn.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "className", id, type));
+        mn.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, funInClass.toString(), id, type));
     }
 
     @Override

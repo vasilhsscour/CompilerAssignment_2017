@@ -126,14 +126,14 @@ public class CollectTypesASTVisitor implements ASTVisitor {
         }
         this.functionType = type;
         
-        String funType = "(";
+        String functionType = "(";
         for(ParameterDeclaration pd: node.getParameters()) { 
             pd.accept(this);
-            funType += pd.getTypeSpecifier();
+            functionType += pd.getTypeSpecifier();
         }
         node.getStmt().accept(this);
-        funType += ")"+type;
-        ASTUtils.setFunctionType(node, funType);
+        functionType += ")"+type;
+        ASTUtils.setFunctionType(node, functionType);
         ASTUtils.setType(node, type);
         
     }
@@ -342,6 +342,7 @@ public class CollectTypesASTVisitor implements ASTVisitor {
                     String message = "\nWrong type in function " + id + "\nExpected Type : " + paramType + "!" + "\nGiven Type :  " + exprType;
                     ASTUtils.error(node, message);
                 }
+                
             }
         }
         
@@ -452,7 +453,6 @@ public class CollectTypesASTVisitor implements ASTVisitor {
             } 
             
             ASTUtils.setType(node, type);
-            ASTUtils.setClassName(node, className);
         }
     }
 
@@ -532,7 +532,6 @@ public class CollectTypesASTVisitor implements ASTVisitor {
             }
             
             ASTUtils.setType(node, type);
-            ASTUtils.setClassName(node, className);
         }
     }
     

@@ -17,4 +17,5 @@ void main(){
 	number sums ;
 	sums = mu.sum(100);
 	write("1+2+...+100=" + sums);
+	sum(1);
 }

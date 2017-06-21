@@ -56,8 +56,11 @@ public class CollectSymbolsASTVisitor implements ASTVisitor {
 
     public CollectSymbolsASTVisitor() {
     }
+    
     private Map <Type,SymTable<SymTableEntry>> map = new HashMap <Type,SymTable<SymTableEntry>>() ;
     private int funIndex = 0;
+    private boolean inClass;
+    private Type funInClass;
     
     @Override
     public void visit(CompilationUnit node) throws ASTVisitorException {
@@ -102,9 +105,14 @@ public class CollectSymbolsASTVisitor implements ASTVisitor {
             String makeType = TypeUtils.MAKE_TYPE+id+";";
             Type type = Type.getType(makeType);
             
+            this.inClass = true;
+            this.funInClass = type;
+            
             for (FieldOrFunctionDefinition fd : node.getDefinitions()) {
                 fd.accept(this);
             }
+            
+            this.inClass = false;
             
             SymTableEntry symTable = new SymTableEntry(id, type);
             symTable.setDefinitions(node.getDefinitions());
@@ -147,11 +155,13 @@ public class CollectSymbolsASTVisitor implements ASTVisitor {
     @Override
     public void visit(FunctionDefinition node) throws ASTVisitorException {
         SymTable<SymTableEntry> env = ASTUtils.getSafeEnv(node);
-        LocalIndexPool pool = new LocalIndexPool();
-        pool.freeLocalIndex(this.funIndex);
+        
         String id = node.getId();
         Type type;
         type = node.getTypeSpecifier();
+        LocalIndexPool pool = ASTUtils.getSafeLocalIndexPool(node);
+        this.funIndex = 0;
+        
         
         if (env.lookupOnlyInTop(id) != null ) {
             String message = "The function "+id+" exists!";
@@ -159,18 +169,19 @@ public class CollectSymbolsASTVisitor implements ASTVisitor {
         }
         else {
             SymTableEntry symTableEntry = new SymTableEntry(id, type, this.funIndex);
+            symTableEntry.setFunInClass(this.funInClass);
             env.put(id, symTableEntry);
             for (ParameterDeclaration pd : node.getParameters()) {
-                this.funIndex ++;
-                pool.freeLocalIndex( this.funIndex);
+                this.funIndex++;
+                pool.freeLocalIndex(funIndex);
                 pd.accept(this);
             }
             node.getStmt().accept(this);
             
             symTableEntry.setParameters(node.getParameters());
             env.put(id, symTableEntry);
-            ASTUtils.setLocalIndexPool(node, pool);
         }
+        this.funIndex = 0;
         
     }
 
@@ -186,7 +197,7 @@ public class CollectSymbolsASTVisitor implements ASTVisitor {
             ASTUtils.error(node, message);
         }
         else {
-            env.put(id, new SymTableEntry(id, type,  this.funIndex));
+            env.put(id, new SymTableEntry(id, type, this.funIndex));
         }
     }
 
@@ -241,10 +252,10 @@ public class CollectSymbolsASTVisitor implements ASTVisitor {
     @Override
     public void visit(VariableDeclarationStatement node) throws ASTVisitorException {
         SymTable<SymTableEntry> env = ASTUtils.getSafeEnv(node);
-        LocalIndexPool pool = ASTUtils.getSafeLocalIndexPool(node);
 
         String id = node.getIdentifier();
         Type type = node.getTypeSpecifier();
+        LocalIndexPool pool = ASTUtils.getSafeLocalIndexPool(node);
         int index = pool.getLocalIndex(type);
         
         if (env.lookupOnlyInTop(id) != null ) {

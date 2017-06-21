@@ -12,6 +12,7 @@ public class SymTableEntry {
     private Integer index;
     private List<FieldOrFunctionDefinition> definitions;
     private List<ParameterDeclaration> parameters;
+    private Type funInClass;
 
     public SymTableEntry(String id) {
         this(id, null, null);
@@ -66,6 +67,15 @@ public class SymTableEntry {
     public void setParameters(List<ParameterDeclaration> parameters) {
         this.parameters = parameters;
     }
+
+    public Type getFunInClass() {
+        return funInClass;
+    }
+
+    public void setFunInClass(Type funInClass) {
+        this.funInClass = funInClass;
+    }
+    
 
     
     @Override

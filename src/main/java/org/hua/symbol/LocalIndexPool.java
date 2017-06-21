@@ -33,6 +33,8 @@ public class LocalIndexPool {
             return getDoubleLocalIndex();
         } else if (type.equals(Type.INT_TYPE) || type.equals(TypeUtils.STRING_TYPE)) {
             return getLocalIndex();
+        } else if ( type.toString().contains(TypeUtils.MAKE_TYPE)) {
+            return getLocalIndex();
         } else {
             throw new IllegalArgumentException("Not supported type " + type);
         }
